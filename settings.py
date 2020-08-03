@@ -12,8 +12,8 @@ class Settings:
     batch_size = 10 
     batch_norm = True
     learning_rate = 0.005
-
-    momentum = 0.7 # No neededed for Adam optimizer
+    isPlateau = True
+    momentum = 0.7 # Not neededed for Adam optimizer
     weight_decay =0.001  # -L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
     dropout = False
     drop_prob1 = 0.5

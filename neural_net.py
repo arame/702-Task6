@@ -43,7 +43,6 @@ class ANN(nn.Module):
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(x, 2, 2)
-        # x= self.conv2(x)
 
         if Settings.batch_norm:
             x = self.conv2_bn(self.conv2(x))
@@ -62,21 +61,7 @@ class ANN(nn.Module):
             x = self.conv2_drop(x)
             x = x.view(-1, 24200)
             x = F.relu(self.fc1(x))
-
             x = self.fc1_drop(x)         
         x = self.fc2(x)
       
-        return x
-
-    def one_hot_encode(self, y):
-        encoded = torch.zeros([10], dtype=torch.float64)
-        encoded[y[0]] = 1.
-        return encoded  
-
-    def optim (self, model, opt, lr, momentum, w_decay):
-        if opt == "Adam":
-            opts= torch.optim.Adam(model.parameters(), lr= learning_rate, weight_decay= w_decay)
-        if opt =="SGD":
-            opts = torch.optim.SGD(model.parameters(), lr= learning_rate, momentum=mom,
-                        weight_decay= w_decay)
-        return opts
+        return x 

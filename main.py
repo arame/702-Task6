@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 # import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
+import torch.utils.data as dt
 from torch.utils.data import Dataset, DataLoader, Subset
 from PIL import Image
 from settings import Settings
@@ -22,6 +23,7 @@ from deviceGpu import DeviceGpu
 from ck_dataset import CKDataset
 from to_numpy import ToNumpy
 from neural_net import ANN
+from scheduler import Scheduler
 
 def main():
     DeviceGpu.get()
@@ -59,9 +61,9 @@ def main():
     indices = torch.randperm(len(train_dataset)).tolist()
     idx= round(len(indices)*0.70)
     train_idx = round(len(indices)*0.85)
-    train_dataset = torch.utils.data.Subset(train_dataset, indices[:idx])
-    val_dataset =   torch.utils.data.Subset(test_dataset, indices[idx:train_idx])
-    test_dataset = torch.utils.data.Subset(test_dataset, indices[train_idx:])
+    train_dataset = dt.Subset(train_dataset, indices[:idx])
+    val_dataset =   dt.Subset(test_dataset, indices[idx:train_idx])
+    test_dataset = dt.Subset(test_dataset, indices[train_idx:])
     # loss funcion- cross entropy-softmax
     criterion = nn.CrossEntropyLoss()
 
@@ -73,19 +75,14 @@ def main():
     print(ann_model)
 
     # Data Loader
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=Settings.batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=Settings.batch_size, shuffle=False)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=Settings.batch_size, shuffle=False)
+    train_loader = dt.DataLoader(train_dataset, batch_size=Settings.batch_size, shuffle=True)
+    val_loader = dt.DataLoader(val_dataset, batch_size=Settings.batch_size, shuffle=False)
+    test_loader = dt.DataLoader(test_dataset, batch_size=Settings.batch_size, shuffle=False)
 
     optimizer = optim(ann_model)
     #Defining learning scheduler -step
 
-    #lr_schedulerst = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size= Settings.step_size, gamma=Settings.gamma)
-
-    #Learning scheduler plateu
-    lr_schedulerpl = ReduceLROnPlateau(optimizer=optimizer, mode='max',factor= Settings.factor, 
-                                   patience=Settings.patience, verbose= True)
-
+    lr_scheduler = Scheduler.getAdjustLearningRate(optimizer)
     since = time.time()
 
     best_acc = 0.0
@@ -108,8 +105,10 @@ def main():
             best_acc = test_acc
             best_epoch= int(epoch + 1)
         #     best_model = copy.deepcopy(model.state_dict())
-
-        lr_schedulerpl.step(test_acc)    
+        if Settings.isPlateau:
+            lr_scheduler.step(test_acc)    
+        else:
+            lr_scheduler.step()
         sys.stderr.write('\r%0*d/%d | Train / Val/ Test loss.: %.3f / %.3f / %.3f '' | Train/Val/Test Acc.: %.3f%%/ %.3f%%/ %.3f%% ' 
                     % (epoch_strlen, epoch+1,Settings.num_epochs, train_loss, val_loss, test_loss, 
                     train_acc*100, val_acc*100, test_acc*100))
@@ -209,7 +208,7 @@ def optim(model):
 def train(model, loader, criterion, optimizer):
     model.train()
     loss_sum, correct_sum  = 0, 0
-    for idx, (inputs, labels) in enumerate(loader):
+    for _, (inputs, labels) in enumerate(loader):
         # data pixels and labels to available device
         inputs, labels = inputs.to(DeviceGpu.device), labels.to(DeviceGpu.device)
         # set the parameter gradients to zero
@@ -232,10 +231,10 @@ def train(model, loader, criterion, optimizer):
 
 def test_val(model, loader, criterion):
     model.eval()
-    test_loss_sum, correct_sum  = 0, 0
+    correct_sum  = 0
     with torch.no_grad():
-        loss_sum, correct_sum , total = 0, 0, 0
-        for idx, (inputs, labels) in enumerate(loader):
+        loss_sum, correct_sum = 0, 0
+        for _, (inputs, labels) in enumerate(loader):
             inputs, labels = inputs.to(DeviceGpu.device), labels.to(DeviceGpu.device)
             outputs = model(inputs)
             loss = criterion(outputs, labels.long())
