@@ -12,7 +12,6 @@ import time
 import datetime
 import copy
 import matplotlib.pyplot as plt
-# import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
 import torch.utils.data as dt
@@ -30,10 +29,12 @@ def main():
     Settings.start()
     with open((Settings.pathInputFile), "rb") as fh:
         data = pickle.load(fh)
-    print(data.keys())
+    print("File opened with keys; ", data.keys())
     fig = plt.figure(figsize=(10, 10))
     plt.imshow(data['training_data'][0][200].reshape((100, 100)), cmap="gray")
-    fig.savefig(Settings.pathOutput + "firstImage.png", bbox_inches='tight', dpi=150)
+    filepath = Settings.pathOutput + "firstImage.png"
+    fig.savefig(filepath, bbox_inches='tight', dpi=150)
+    print("Saved first image as ", filepath)
     X_train = data['training_data'][0]
     y_train =data['training_data'][1]
     X_val = data['validation_data'][0]
@@ -44,10 +45,6 @@ def main():
     X= np.append(X, X_test, axis = 0)
     y = np.append(y_train, y_val, axis = 0)
     y= np.append(y, y_test, axis = 0)
-
-    # Verification of the number of images and labels
-    print("Labels ",len(y))
-    print("Images ",len(X))
 
     # Data augmentation to the training data will be undertaken - T.RandomHorizontalFlip
 
@@ -84,9 +81,7 @@ def main():
 
     lr_scheduler = Scheduler.getAdjustLearningRate(optimizer)
     since = time.time()
-
     best_acc = 0.0
-
     train_loss_log= []
     train_corrects_log = []
     val_loss_log= []
@@ -104,14 +99,16 @@ def main():
         if test_acc > best_acc:
             best_acc = test_acc
             best_epoch= int(epoch + 1)
-        #     best_model = copy.deepcopy(model.state_dict())
+
         if Settings.isPlateau:
             lr_scheduler.step(test_acc)    
         else:
             lr_scheduler.step()
+
         sys.stderr.write('\r%0*d/%d | Train / Val/ Test loss.: %.3f / %.3f / %.3f '' | Train/Val/Test Acc.: %.3f%%/ %.3f%%/ %.3f%% ' 
                     % (epoch_strlen, epoch+1,Settings.num_epochs, train_loss, val_loss, test_loss, 
                     train_acc*100, val_acc*100, test_acc*100))
+
         print('| lr.:{:5f}'.format((optimizer.param_groups[0]['lr'])))
 
         train_loss_log.append(train_loss)
@@ -147,7 +144,7 @@ def main():
     images, labels = dataiter.next()
 
     # print images
-    fig = plt.figure(figsize=(13, 7))
+    
     grid = torchvision.utils.make_grid(images)
     imshow(grid)
     print('GroundTruth: ', ' '.join('%5s' % Settings.emotions[labels[j]] for j in range(Settings.batch_size)))
@@ -189,11 +186,12 @@ def main():
     Settings.end()
 
 def imshow(img):
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(13, 7))
+    #fig = plt.figure(figsize=(10, 10))
     img = img / 2 + 0.5     # unnormalize
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
-    fig.savefig(Settings.pathOutput + "epoch_cost.png", bbox_inches='tight', dpi=150)
+    fig.savefig(Settings.pathOutput + "ImageBlock.png", bbox_inches='tight', dpi=150)
 
 # Defining SGD and Adam optimizers
 

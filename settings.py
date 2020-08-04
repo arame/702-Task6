@@ -2,7 +2,6 @@ import datetime
 import os
 import sys
 class Settings:
-    sample_size_cut = 0.3   # 30% of images for a person will be neutral, and 30% will be the emotion
     pathOutput = "../output/"
     pathInputFile = "../files/ck_final.pickle"
     pathSaveNet = "../save/"
@@ -13,22 +12,32 @@ class Settings:
     batch_norm = True
     learning_rate = 0.005
     isPlateau = True
-    momentum = 0.7 # Not neededed for Adam optimizer
-    weight_decay =0.001  # -L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
+    momentum = 0.7          # Not neededed for Adam optimizer
+    weight_decay =0.001     # L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
     dropout = False
     drop_prob1 = 0.5
     drop_prob2 = 0.5
-    optimizer = "Adam"  # Select "Adam" or "SGD"
+    optimizer = "Adam"      # Select "Adam" or "SGD"
 
     ################
     #Learning params 
     ################
     # step learning rate adjustment
+    '''Decays the learning rate of each parameter group by gamma every step_size epochs. 
+    Notice that such decay can happen simultaneously with other changes to the learning rate from outside this scheduler. 
+    When last_epoch=-1, sets initial lr as lr.
+    '''
     step_size = 20
     gamma = 0.5 
     # plateu learning rate adjustment
-    factor = 0.5 
-    patience = 2
+    '''Reduce learning rate when a metric has stopped improving. 
+    Models often benefit from reducing the learning rate by a factor of 2-10 once learning stagnates. 
+    This scheduler reads a metrics quantity and if no improvement is seen for a ‘patience’ number of epochs, the learning rate is reduced.
+    '''
+    factor = 0.5            # Factor by which the learning rate will be reduced. new_lr = lr * factor.
+    patience = 2            # Number of epochs with no improvement after which learning rate will be reduced. 
+                            # For example, if patience = 2, then we will ignore the first 2 epochs with no improvement, 
+                            # and will only decrease the LR after the 3rd epoch if the loss still hasn’t improved then.
 
     @staticmethod
     def start():
@@ -91,3 +100,8 @@ class Settings:
             print("This is using the Adam Optimiser")
         else:
             print("This is using the SGD Optimiser")
+
+        if Settings.isPlateau:
+            "Optimizer learning rate plateau settings - Patience; ", Settings.patience, " Factor; ", Settings.factor
+        else:
+            "Optimizer learning rate step settings - Step Size; ", Settings.step_size, " Gamma; ", Settings.gamma

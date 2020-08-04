@@ -1,14 +1,6 @@
 import torch
-import torchvision
-from torchvision import transforms as T
-import torch.nn as nn
-import torch.nn.functional as F
-from torch import nn
-from torch.utils.data import Dataset, DataLoader, Subset
+from torch.utils.data import Dataset
 import numpy as np
-from PIL import Image
-from settings import Settings
-from deviceGpu import DeviceGpu
 
 class CKDataset(Dataset):
 
