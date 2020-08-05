@@ -12,8 +12,10 @@ import time
 import datetime
 import copy
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import plot_confusion_matrix
 import torch.utils.data as dt
 from torch.utils.data import Dataset, DataLoader, Subset
 from PIL import Image
@@ -32,7 +34,7 @@ def main():
     print("File opened with keys; ", data.keys())
     fig = plt.figure(figsize=(10, 10))
     plt.imshow(data['training_data'][0][200].reshape((100, 100)), cmap="gray")
-    filepath = Settings.pathOutput + "firstImage.png"
+    filepath = Settings.pathOutput + "firstImage6.png"
     fig.savefig(filepath, bbox_inches='tight', dpi=150)
     print("Saved first image as ", filepath)
     X_train = data['training_data'][0]
@@ -128,13 +130,13 @@ def main():
     plt.plot(val_loss_log, label='validation loss')
     plt.plot(test_loss_log, label='test loss')
     plt.legend()
-    fig.savefig(Settings.pathOutput + "epoch_cost.png", bbox_inches='tight', dpi=150)
+    fig.savefig(Settings.pathOutput + "epoch_cost6.png", bbox_inches='tight', dpi=150)
 
     fig = plt.figure(figsize=(10, 10)) 
     plt.plot(train_corrects_log, label='training accuracy')
     plt.plot(val_corrects_log, label='val accuracy')
     plt.plot(test_corrects_log, label='test accuracy')
-    fig.savefig(Settings.pathOutput + "accuracy.png", bbox_inches='tight', dpi=150)
+    fig.savefig(Settings.pathOutput + "accuracy6.png", bbox_inches='tight', dpi=150)
 
     try:
         torch.save(ann_model.state_dict(), Settings.pathSaveNet)
@@ -147,7 +149,11 @@ def main():
     
     grid = torchvision.utils.make_grid(images)
     imshow(grid)
-    print('GroundTruth: ', ' '.join('%5s' % Settings.emotions[labels[j]] for j in range(Settings.batch_size)))
+    ground_truth_filepath = Settings.pathOutput + "ground_truth6.txt"
+    ground_truth_file = open(ground_truth_filepath,"w+")
+    ground_truth_text = 'GroundTruth: ', ' '.join('%5s' % Settings.emotions[labels[true_label]] for true_label in range(Settings.batch_size))
+    ground_truth_file.write(ground_truth_text[0] + ground_truth_text[1])
+    print(ground_truth_text)
 
     try:
         ann_model.state_dict(torch.load(Settings.pathSaveNet)) # Change the path to your directory
@@ -158,10 +164,12 @@ def main():
 
     _, predicted = torch.max(outputs, 1)
 
-    print('Predicted: ', ' '.join('%5s' % Settings.emotions[predicted[j]] for j in range(Settings.batch_size)))
+    print('Predicted: ', ' '.join('%5s' % Settings.emotions[predicted[true_label]] for true_label in range(Settings.batch_size)))
 
     class_correct = list(0. for i in range(len(Settings.emotions)))
     class_total = list(0. for i in range(len(Settings.emotions)))
+    all_predictions = torch.tensor([]).long().to(DeviceGpu.device)
+    all_labels = torch.tensor([]).long().to(DeviceGpu.device)
     with torch.no_grad():
         for data in test_loader:
             inputs, labels = data
@@ -171,6 +179,8 @@ def main():
             outputs = ann_model(inputs)
             _, predicted = torch.max(outputs, 1)
             correct = (predicted == labels).squeeze()
+            all_predictions = torch.cat((all_predictions, predicted), dim=0)
+            all_labels = torch.cat((all_labels, labels), dim=0)
             if correct.ndim == 0:
                 continue
             for i in range(len(test_loader.dataset)):
@@ -182,6 +192,16 @@ def main():
         print('Accuracy of %5s : %.2f %%' % (
             Settings.emotions[i], 100 * class_correct[i] / class_total[i]))
 
+    cm = confusion_matrix(all_labels.cpu(), all_predictions.cpu())
+    sns.set(rc={'figure.figsize':(11,8)})
+    sns.set(font_scale=1.4) # for label size
+    fig= plt.figure(figsize=(10,5))
+    sns.heatmap(cm, annot=True, annot_kws={"size": 10}, fmt='g') # font size
+    plt.title('Confusion matrix')
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    fig.savefig(Settings.pathOutput + "confusion6.png", bbox_inches='tight', dpi=150)
+
     # ----------THE END--------------------------------------------------------------
     Settings.end()
 
@@ -191,7 +211,7 @@ def imshow(img):
     img = img / 2 + 0.5     # unnormalize
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
-    fig.savefig(Settings.pathOutput + "ImageBlock.png", bbox_inches='tight', dpi=150)
+    fig.savefig(Settings.pathOutput + "ImageBlock6.png", bbox_inches='tight', dpi=150)
 
 # Defining SGD and Adam optimizers
 
