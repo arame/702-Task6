@@ -207,7 +207,6 @@ def main():
 
 def imshow(img):
     fig = plt.figure(figsize=(13, 7))
-    #fig = plt.figure(figsize=(10, 10))
     img = img / 2 + 0.5     # unnormalize
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
