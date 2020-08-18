@@ -7,13 +7,13 @@ class Settings:
     pathSaveNet = "../save/"
     emotions = ["neutral", "anger", "contempt", "disgust", "fear", "happy", "sadness", "surprise"]
     dateString = ""
-    num_epochs = 60
+    num_epochs = 350
     batch_size = 10 
     batch_norm = True
     learning_rate = 0.005
     isPlateau = True
-    momentum = 0.7          # Not neededed for Adam optimizer
-    weight_decay =0.001     # L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
+    momentum = 0            # Not neededed for Adam optimizer
+    weight_decay =0     # L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
     dropout = False
     drop_prob1 = 0.5
     drop_prob2 = 0.5
@@ -46,6 +46,10 @@ class Settings:
         print("*"*100)
         Settings.dateString = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')
         Settings.validateHyperparameters()
+        if not os.path.exists(Settings.pathOutput):
+            os.makedirs(Settings.pathOutput)
+        if not os.path.exists(Settings.pathSaveNet):
+            os.makedirs(Settings.pathSaveNet)
         Settings.pathOutput = Settings.setSettingPath(Settings.pathOutput)
         Settings.pathSaveNet = Settings.setSettingPath(Settings.pathSaveNet)
         Settings.printHyperparameters()
@@ -81,27 +85,36 @@ class Settings:
     @staticmethod
     def printHyperparameters():
         print("*"*100)
-        print("* Hyperparameters")
-        print("* ---------------")
-        print("Learning Rate  ", Settings.learning_rate)
-        print("Batch Size     ", Settings.batch_size)
-        print("Epochs         ", Settings.num_epochs)
-        print("Momentum       ", Settings.momentum)
+        filepath = Settings.pathOutput + "hyperparameters.txt"
+        file = open(filepath, "w+")
+        Settings.outputLine(file, "* Hyperparameters")
+        Settings.outputLine(file, "* ---------------")
+        Settings.outputLine(file, "Learning Rate  " + str(Settings.learning_rate))
+        Settings.outputLine(file, "Batch Size     " + str(Settings.batch_size))
+        Settings.outputLine(file, "Epochs         " + str(Settings.num_epochs))
+        Settings.outputLine(file, "Momentum       " + str(Settings.momentum))
         if Settings.drop_prob1 == 0 and Settings.drop_prob2 == 0:
-            print("!! No Drop out")
+            Settings.outputLine(file, "!! No Drop out")
         else:
-            print("Dropout Rates = ", Settings.drop_prob1, " and ", Settings.drop_prob2)
+            Settings.outputLine(file, "Dropout Rates = " + str(Settings.drop_prob1) + " and " + str(Settings.drop_prob2))
         if Settings.weight_decay == 0:
-            print("!! No L2 weight decay")
+            Settings.outputLine(file, "!! No L2 weight decay")
         else:
-            print("L2 weight decay", Settings.weight_decay)
+            Settings.outputLine(file, "L2 weight decay" + str(Settings.weight_decay))
 
         if Settings.optimizer ==  "Adam":
-            print("This is using the Adam Optimiser")
+            Settings.outputLine(file, "This is using the Adam Optimiser")
         else:
-            print("This is using the SGD Optimiser")
+            Settings.outputLine(file, "This is using the SGD Optimiser")
 
         if Settings.isPlateau:
-            "Optimizer learning rate plateau settings - Patience; ", Settings.patience, " Factor; ", Settings.factor
+            Settings.outputLine(file, "Optimizer learning rate plateau settings - Patience; " + str(Settings.patience) + " Factor; " + str(Settings.factor))
         else:
-            "Optimizer learning rate step settings - Step Size; ", Settings.step_size, " Gamma; ", Settings.gamma
+            Settings.outputLine(file, "Optimizer learning rate step settings - Step Size; " + str(Settings.step_size) + " Gamma; " + str(Settings.gamma))
+
+        Settings.outputLine(file, "Output files are located in the folder " + Settings.pathOutput)
+
+    @staticmethod
+    def outputLine(file, message):
+        file.write(message + "\n")
+        print(message)

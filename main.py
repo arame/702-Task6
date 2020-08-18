@@ -67,18 +67,18 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     # Printing the neural network model - move the model to the available device
-    ann_model = ANN(batch_norm = Settings.batch_norm, is_training= True ).to(DeviceGpu.device)
+    ann = ANN(batch_norm = Settings.batch_norm, is_training= True ).to(DeviceGpu.device)
     # Move the model to the available device
-    ann_model.to(DeviceGpu.device)
+    ann.to(DeviceGpu.device)
 
-    print(ann_model)
+    print(ann)
 
     # Data Loader
     train_loader = dt.DataLoader(train_dataset, batch_size=Settings.batch_size, shuffle=True)
     val_loader = dt.DataLoader(val_dataset, batch_size=Settings.batch_size, shuffle=False)
     test_loader = dt.DataLoader(test_dataset, batch_size=Settings.batch_size, shuffle=False)
 
-    optimizer = optim(ann_model)
+    optimizer = optim(ann)
     #Defining learning scheduler -step
 
     lr_scheduler = Scheduler.getAdjustLearningRate(optimizer)
@@ -94,10 +94,10 @@ def main():
     for epoch in range(Settings.num_epochs):
         epoch_strlen = len(str(Settings.num_epochs)) 
         #getting the loss and accurracy from the training, validation and test datasets
-        train_loss, train_acc = train(ann_model, train_loader, criterion, optimizer)
+        train_loss, train_acc = train(ann, train_loader, criterion, optimizer)
 
-        val_loss, val_acc = test_val(ann_model, val_loader, criterion)
-        test_loss, test_acc = test_val(ann_model, test_loader, criterion)
+        val_loss, val_acc = test_val(ann, val_loader, criterion)
+        test_loss, test_acc = test_val(ann, test_loader, criterion)
         if test_acc > best_acc:
             best_acc = test_acc
             best_epoch= int(epoch + 1)
@@ -139,7 +139,7 @@ def main():
     fig.savefig(Settings.pathOutput + "accuracy6.png", bbox_inches='tight', dpi=150)
 
     try:
-        torch.save(ann_model.state_dict(), Settings.pathSaveNet)
+        torch.save(ann.state_dict(), Settings.pathSaveNet)
     except:
         print("Could not save model in ", Settings.pathSaveNet)
     dataiter = iter(test_loader)
@@ -156,11 +156,11 @@ def main():
     print(ground_truth_text)
 
     try:
-        ann_model.state_dict(torch.load(Settings.pathSaveNet)) # Change the path to your directory
+        ann.state_dict(torch.load(Settings.pathSaveNet)) # Change the path to your directory
     except:
         print("Unable to save model in the folder", Settings.pathSaveNet)
 
-    outputs =ann_model(images.to(DeviceGpu.device))
+    outputs =ann(images.to(DeviceGpu.device))
 
     _, predicted = torch.max(outputs, 1)
 
@@ -176,7 +176,7 @@ def main():
             inputs = inputs.to(DeviceGpu.device)
             labels = labels.to(DeviceGpu.device)
 
-            outputs = ann_model(inputs)
+            outputs = ann(inputs)
             _, predicted = torch.max(outputs, 1)
             correct = (predicted == labels).squeeze()
             all_predictions = torch.cat((all_predictions, predicted), dim=0)
@@ -193,17 +193,48 @@ def main():
             Settings.emotions[i], 100 * class_correct[i] / class_total[i]))
 
     cm = confusion_matrix(all_labels.cpu(), all_predictions.cpu())
+    cm_acc = cm_accuracy(cm)
     sns.set(rc={'figure.figsize':(11,8)})
     sns.set(font_scale=1.4) # for label size
     fig= plt.figure(figsize=(10,5))
     sns.heatmap(cm, annot=True, annot_kws={"size": 10}, fmt='g') # font size
-    plt.title('Confusion matrix')
+    plt.title('Confusion matrix with accuracy %.2f%%' % (cm_acc*100))
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     fig.savefig(Settings.pathOutput + "confusion6.png", bbox_inches='tight', dpi=150)
 
+    filepath = Settings.pathOutput + "digit_metrics.txt"
+    file = open(filepath, "w+")
+    Settings.outputLine(file, "* Digit metrics")
+    Settings.outputLine(file, "* ---------------")
+    total_sample =0
+    for i in range(len(Settings.emotions)):
+        row_sum = np.sum(cm[i:i+1,:])
+        total_sample = total_sample + row_sum
+        message = 'label: %.0f '' |  Precision: %.2f%%'' |  Recall: %.2f%%'' |  f1-score: %.2f%%'' |  support: %.0f' % (i, precision(i, cm), recall(i, cm), f1_score(precision(i, cm), recall(i, cm)),row_sum)    
+        Settings.outputLine(file, message)
+    message = "Total samples:" + str(total_sample)
+    Settings.outputLine(file, message)
+
     # ----------THE END--------------------------------------------------------------
     Settings.end()
+
+def cm_accuracy(confusion_matrix):
+    diagonal_sum = confusion_matrix.trace()
+    sum_of_all_elements = confusion_matrix.sum()
+    return diagonal_sum / sum_of_all_elements
+
+def precision(y, conf_matrix):
+    col = conf_matrix[:, y]
+    return conf_matrix[y, y] / col.sum()
+    
+def recall(y, conf_matrix):
+    row = conf_matrix[y, :]
+    return conf_matrix[y, y] / row.sum()
+
+def f1_score(precision, recall):
+    F1 = 2 * (precision * recall) / (precision + recall)
+    return F1
 
 def imshow(img):
     fig = plt.figure(figsize=(13, 7))
@@ -215,11 +246,13 @@ def imshow(img):
 # Defining SGD and Adam optimizers
 
 def optim(model):
+    _lr = Settings.learning_rate
+    _mo = Settings.momentum
+    _l2 = Settings.weight_decay
     if Settings.optimizer == "Adam":
-        opts= torch.optim.Adam(model.parameters(), lr= Settings.learning_rate, weight_decay= Settings.weight_decay)
+        opts= torch.optim.Adam(model.parameters(), lr= _lr, weight_decay= _l2)
     if Settings.optimizer =="SGD":
-        opts = torch.optim.SGD(model.parameters(), lr= Settings.learning_rate, momentum=Settings.momentum,
-                    weight_decay= Settings.weight_decay)
+        opts = torch.optim.SGD(model.parameters(), lr= _lr, momentum=_mo, weight_decay= _l2)
     return opts
 
 def train(model, loader, criterion, optimizer):
