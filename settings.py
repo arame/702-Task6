@@ -7,17 +7,17 @@ class Settings:
     pathSaveNet = "../save/"
     emotions = ["neutral", "anger", "contempt", "disgust", "fear", "happy", "sadness", "surprise"]
     dateString = ""
-    num_epochs = 350
+    num_epochs = 100
     batch_size = 10 
     batch_norm = True
     learning_rate = 0.005
     isPlateau = True
-    momentum = 0            # Not neededed for Adam optimizer
-    weight_decay =0     # L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
-    dropout = False
+    momentum = 0                 # Not neededed for Adam optimizer
+    weight_decay =0              # L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
+    dropout = True
     drop_prob1 = 0.5
     drop_prob2 = 0.5
-    optimizer = "Adam"      # Select "Adam" or "SGD"
+    optimizer = "Adam"            # Select "Adam" or "SGD"
 
     ################
     #Learning params 
@@ -96,11 +96,12 @@ class Settings:
         if Settings.drop_prob1 == 0 and Settings.drop_prob2 == 0:
             Settings.outputLine(file, "!! No Drop out")
         else:
-            Settings.outputLine(file, "Dropout Rates = " + str(Settings.drop_prob1) + " and " + str(Settings.drop_prob2))
+            Settings.outputLine(file, "Dropout Rates   " + str(Settings.drop_prob1) + " and " + str(Settings.drop_prob2))
+
         if Settings.weight_decay == 0:
             Settings.outputLine(file, "!! No L2 weight decay")
         else:
-            Settings.outputLine(file, "L2 weight decay" + str(Settings.weight_decay))
+            Settings.outputLine(file, "L2 weight decay " + str(Settings.weight_decay))
 
         if Settings.optimizer ==  "Adam":
             Settings.outputLine(file, "This is using the Adam Optimiser")

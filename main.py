@@ -67,7 +67,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     # Printing the neural network model - move the model to the available device
-    ann = ANN(batch_norm = Settings.batch_norm, is_training= True ).to(DeviceGpu.device)
+    ann = ANN(is_training= True ).to(DeviceGpu.device)
     # Move the model to the available device
     ann.to(DeviceGpu.device)
 

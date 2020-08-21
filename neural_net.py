@@ -4,11 +4,11 @@ import torch.nn.functional as F
 from settings import Settings
 
 class ANN(nn.Module):
-    def __init__(self, batch_norm = False, is_training = True): #p1,p2,
+    def __init__(self, is_training = True): #p1,p2,
         super(ANN, self).__init__()
       
         self.training = is_training
-        self.batch_norm = batch_norm
+        self.batch_norm = Settings.batch_norm
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=20, kernel_size=5, stride=1)
         self.conv2 = nn.Conv2d(in_channels=20, out_channels=50, kernel_size=5, stride=1)
         if batch_norm:
@@ -34,5 +34,4 @@ class ANN(nn.Module):
         x= F.relu(x)
         x = self.fc1_drop(x)
         x = self.fc2(x)
-      
         return x 
