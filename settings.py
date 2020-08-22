@@ -14,9 +14,9 @@ class Settings:
     isPlateau = True
     momentum = 0                 # Not neededed for Adam optimizer
     weight_decay =0              # L2 weight decay and dropout cannot be run at the same time (usually 0.0001)
-    dropout = True
-    drop_prob1 = 0.5
-    drop_prob2 = 0.5
+    dropout = False
+    drop_prob1 = 0
+    drop_prob2 = 0
     optimizer = "Adam"            # Select "Adam" or "SGD"
 
     ################

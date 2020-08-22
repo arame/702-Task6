@@ -8,10 +8,9 @@ class ANN(nn.Module):
         super(ANN, self).__init__()
       
         self.training = is_training
-        self.batch_norm = Settings.batch_norm
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=20, kernel_size=5, stride=1)
         self.conv2 = nn.Conv2d(in_channels=20, out_channels=50, kernel_size=5, stride=1)
-        if batch_norm:
+        if Settings.batch_norm:
             self.conv2_bn = nn.BatchNorm2d(50)
             self.fc1_bn = nn.BatchNorm1d(200) # out features
         self.conv2_drop = nn.Dropout2d(p=Settings.drop_prob1) #p1=0.4

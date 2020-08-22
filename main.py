@@ -129,6 +129,8 @@ def main():
     plt.plot(train_loss_log, label='training loss')
     plt.plot(val_loss_log, label='validation loss')
     plt.plot(test_loss_log, label='test loss')
+    plt.ylabel('Cost')
+    plt.xlabel('Epochs')
     plt.legend()
     fig.savefig(Settings.pathOutput + "epoch_cost6.png", bbox_inches='tight', dpi=150)
 
@@ -136,6 +138,8 @@ def main():
     plt.plot(train_corrects_log, label='training accuracy')
     plt.plot(val_corrects_log, label='val accuracy')
     plt.plot(test_corrects_log, label='test accuracy')
+    plt.ylabel('acc')
+    plt.xlabel('Epochs')
     fig.savefig(Settings.pathOutput + "accuracy6.png", bbox_inches='tight', dpi=150)
 
     try:
